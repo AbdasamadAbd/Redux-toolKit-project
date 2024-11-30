@@ -1,38 +1,46 @@
 import { useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import { postAdded } from "./postsSlice"
+import { useSelector } from "react-redux"
+import { addNewPost, FetchStatusType } from "./postsSlice"
 import { selectAllUsers } from "../users/usersSlice"
+import { useAppDispatch } from "../../hooks/useAppDispatch"
 
 
 const AddPostForm = () => {
 
-    const dispatch = useDispatch()
+    const dispatch = useAppDispatch()
     const users = useSelector( selectAllUsers )
 
 
     const [title, setTitle] = useState("")
     const [content, setContent] = useState("")
-    const [userId, setUserId] = useState("")
+    const [userId, setUserId] = useState<number>(NaN)
 
+    const [addReqStatus, setAddReqStatus] = useState<FetchStatusType>("idle")
+
+
+    // const canSave = Boolean(title) && Boolean(content)  && Boolean(userId)
+    const canSave = [title, content, userId].every(Boolean) && addReqStatus === "idle";
     const onSavePostClicked = () => {
-        if (title && content) {
-            dispatch(
-                // postAdded({
-                //     id: nanoid(),
-                //     title,
-                //     content
-                // })
+        if (canSave) {
+            try {
+                setAddReqStatus("pending");
+                dispatch( addNewPost({title, body: content, userId}) ).unwrap()
+                // reduxToolKit adds an unwrap func to the returned promise and then that return retuens a new promise that either has the action payload or it throws an arror, if it is the rejected action, so that let's us use this tryCatch logic here 
 
-                postAdded(title,content,userId)
+                setTitle("");
+                setContent("");
+                setUserId(NaN);
 
-            )
+            } catch (error) {
+                console.error("Faild to save the post ", error);
+            } finally {
+                setAddReqStatus("idle")
+            }
         }
     }
 
-    const canSave = Boolean(title) && Boolean(content)  && Boolean(userId)
 
-
-    const usersOptions = users.map(user => (
+    const usersOptions = users?.length && users.map(user => (
         <option key={user.id} value={user.id}>{user.name}</option>
     ))
 
@@ -56,7 +64,7 @@ const AddPostForm = () => {
                     className="w-full"
                     name="userId"
                     value={userId}
-                    onChange={(e)=> setUserId(e.target.value)}
+                    onChange={(e)=> setUserId(Number(e.target.value))}
                 >
                     <option value="" disabled>select author</option>
                     {usersOptions}

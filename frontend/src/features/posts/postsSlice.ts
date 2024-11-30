@@ -1,14 +1,16 @@
-import { createSlice, PayloadAction, nanoid } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction, nanoid, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
 import { sub } from "date-fns";
 
+const POSTS_URL = 'https://jsonplaceholder.typicode.com/posts';
 
 export interface PostType {
     id: string;
-    userId: string;
+    userId: number;
     title: string;
-    content: string;
-    date: Date;
-    reactions: PostReactionsType;
+    body: string;
+    date: string;
+    reactions: PostReactionsType; 
 }
 
 interface PostReactionsType {
@@ -20,29 +22,51 @@ interface PostReactionsType {
     coffee: number,
 }
 
-const initialState: PostType[] = [
-    { 
-        id: "1", title: "Learning Redux Toolkit", content: "I've heard dhjh", userId:"6372", date: sub(new Date(), {minutes: 10}),
-        reactions: {
-            thumbsUp: 0,
-            wow: 0,
-            heart: 0,
-            rocket: 0,
-            coffee: 0,
-        }
-    },
+export type FetchStatusType = 'idle' | 'pending' | 'loading' | 'succeeded' | 'failed';
+export type FetchErrorType = string | undefined | null ;
 
-    { 
-        id: "2", title: "Learning Redux ", content: "I've heard dhjh Toolkit dshdsgd dshfgdhgfdgsfj", userId:"02930", date: sub(new Date(), {minutes: 5}), 
-        reactions: {
-            thumbsUp: 0,
-            wow: 0,
-            heart: 0,
-            rocket: 0,
-            coffee: 0,
-        } 
+type StateType = {
+    posts: PostType[],
+    status: FetchStatusType;
+    error: FetchErrorType 
+}
+
+const initialState: StateType = {
+    posts: [],
+    status: 'idle',
+    error: null
+}
+
+export const fetchPosts = createAsyncThunk('posts/fetchPosts', async () => {
+    try {
+        const responce = await axios.get(POSTS_URL);
+        return responce.data
+    } catch (err) {
+        const error = err as Error;
+        return error.message;
     }
-];
+})
+
+
+interface NewPostType {
+    userId: number;
+    title: string;
+    body: string;
+}
+
+export const addNewPost = createAsyncThunk<PostType, NewPostType>('posts/addNewPost', async (initialPost) => {
+    try {
+        const responce = await axios.post(POSTS_URL, initialPost);
+        return responce.data
+    } catch (err) {
+        const error = err as Error;
+        return error.message;
+    }
+})
+
+// The error you're encountering is due to TypeScript's handling of errors in a try-catch block. By default, TypeScript does not know the type of the error caught in the catch block, so it infers it as unknown. This is a safety feature to ensure that you handle errors appropriately.
+
+
 
 const postsSlice = createSlice({
     name: "posts",
@@ -54,16 +78,16 @@ const postsSlice = createSlice({
 
         postAdded: {
             reducer(state, action: PayloadAction<PostType>) {
-                state.push(action.payload)
+                state.posts.push(action.payload)
             },
 
-            prepare(title: string, content: string, userId: string) {
+            prepare(title: string, body: string, userId: number) {
                 return {
                     payload: {
                         id: nanoid(),
                         title,
-                        content,
-                        date: new Date(),
+                        body,
+                        date: (new Date()).toISOString(),
                         userId,
                         reactions: {
                             thumbsUp: 0,
@@ -79,7 +103,7 @@ const postsSlice = createSlice({
 
         reactionAdded(state, action) {
             const { postId, reaction } = action.payload;
-            const existingPost = state.find(post => post.id === postId);
+            const existingPost = state.posts.find(post => post.id === postId);
             
             if (existingPost) {
                 existingPost.reactions[reaction]++
@@ -88,10 +112,65 @@ const postsSlice = createSlice({
                 // you can only do this when you are in the createSlice
             }
         }
+    },
+
+    // extraReducers , it handling somthing that did not get defined inside of the noraml reducers part of the slice  
+    extraReducers( builder) {
+        builder
+            .addCase(fetchPosts.pending, (state) => {
+                state.status = 'loading';
+            })
+            .addCase(fetchPosts.fulfilled, (state, action) => {
+                state.status = "succeeded";
+
+                // adding date and reactions to data to fit our data staructure :
+                let min = 1;
+                const loadedPosts = action.payload.map((post: PostType) => {
+                    post.date = sub(new Date(), {minutes: min++}).toISOString(),
+                    post.reactions = {
+                        thumbsUp: 0,
+                        wow: 0,
+                        heart: 0,
+                        rocket: 0,
+                        coffee: 0,
+                    }
+
+                    return post;
+                })
+
+                state.posts = state.posts.concat(loadedPosts)
+            })
+            .addCase(fetchPosts.rejected, (state, action) => {
+                state.status = 'failed';
+                state.error = action.error.message;
+            })
+            .addCase(addNewPost.fulfilled, (state, action) => {
+                const newPost = action.payload;
+
+                console.log("newPost : ",newPost);
+                
+                newPost.userId = Number(newPost.userId);
+                newPost.date = new Date().toISOString();
+                newPost.reactions = {
+                    thumbsUp: 0,
+                    wow: 0,
+                    heart: 0,
+                    rocket: 0,
+                    coffee: 0,
+                };
+                console.log("newPost : ",newPost);
+
+
+                state.posts.push(newPost)
+                console.log("state.posts : ",state.posts);
+
+            })
     }
 })
 
-export const selectAllPosts = (state: any): PostType[] => state.posts;
+export const selectAllPosts = (state: any): PostType[] => state.posts.posts;
+export const getPostsStatus = (state: any): StateType["status"] => state.posts.status;
+export const getPostsError = (state: any): StateType["error"] => state.posts.error;
 export const { postAdded, reactionAdded } = postsSlice.actions;
 
 export default postsSlice.reducer;
