@@ -5,14 +5,21 @@ import App from './App.tsx'
 import { Provider } from 'react-redux'
 import { store } from './app/store.ts'
 import { fetchUsers } from './features/users/usersSlice.ts'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { fetchPosts } from './features/posts/postsSlice.ts'
 
 // we want to fetch users when the app starts
 store.dispatch(fetchUsers())
+store.dispatch(fetchPosts()) // if you do not fetch them here when you relod the page in the post (edit view) page you will get no posts found 
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider store={store}>
-      <App />
+      <BrowserRouter>
+        <Routes>
+          <Route path='/*' Component={App}/>
+        </Routes>
+      </BrowserRouter>
     </Provider>
   </StrictMode>,
 )

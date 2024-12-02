@@ -3,9 +3,11 @@ import { useSelector } from "react-redux"
 import { addNewPost, FetchStatusType } from "./postsSlice"
 import { selectAllUsers } from "../users/usersSlice"
 import { useAppDispatch } from "../../hooks/useAppDispatch"
+import { useNavigate } from "react-router-dom"
 
 
 const AddPostForm = () => {
+    const navigate = useNavigate();
 
     const dispatch = useAppDispatch()
     const users = useSelector( selectAllUsers )
@@ -30,6 +32,8 @@ const AddPostForm = () => {
                 setTitle("");
                 setContent("");
                 setUserId(NaN);
+
+                navigate('/')
 
             } catch (error) {
                 console.error("Faild to save the post ", error);

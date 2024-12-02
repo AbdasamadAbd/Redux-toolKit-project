@@ -1,9 +1,7 @@
 
 import { useSelector } from 'react-redux'
-import { fetchPosts, getPostsError, getPostsStatus, selectAllPosts } from './postsSlice'
-import { useEffect } from 'react'
+import { getPostsError, getPostsStatus, selectAllPosts } from './postsSlice'
 import PostsExcerpt from './PostsExcerpt'
-import { useAppDispatch } from '../../hooks/useAppDispatch'
 
 const PostsList = () => {
   // const posts: PostType[] = useSelector( (state: any) => state.posts)
@@ -11,13 +9,12 @@ const PostsList = () => {
   const postsStatus = useSelector( getPostsStatus )
   const postsError = useSelector( getPostsError )
 
-  const dispatch = useAppDispatch();
-
-  useEffect(() => {
-    if (postsStatus === "idle") {
-      dispatch(fetchPosts())
-    }
- },[postsStatus, dispatch])
+// we do not need that becouse we fetch post at the start of the app in main.tsx
+//   useEffect(() => {
+//     if (postsStatus === "idle") {
+//       dispatch(fetchPosts())
+//     }
+//  },[postsStatus, dispatch])
 
 
   let content;
@@ -41,7 +38,6 @@ const PostsList = () => {
 
   return (
     <section className='bg-white p-5 rounded-lg space-y-5'>
-      <h2>Posts</h2>
       {content}
     </section>
   )
