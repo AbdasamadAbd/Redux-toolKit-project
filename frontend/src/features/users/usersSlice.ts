@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import { FetchErrorType, FetchStatusType } from "../posts/postsSlice";
 import axios from "axios";
+import { RootStateType } from "../../app/store";
 
 const POSTS_URL = 'https://jsonplaceholder.typicode.com/users';
 
@@ -61,8 +62,13 @@ const userSlice = createSlice({
     },
 })
 
-export const selectAllUsers = (state: any): UserType[] => state.users.users;
-export const getUsersStatus = (state: any): StateType["status"] => state.users.status;
-export const getUsersError = (state: any): StateType["error"] => state.users.error;
+export const selectAllUsers = (state: RootStateType): UserType[] => state.users.users;
+export const getUsersStatus = (state: RootStateType): StateType["status"] => state.users.status;
+export const getUsersError = (state: RootStateType): StateType["error"] => state.users.error;
+
+export const selectUserById = (state: RootStateType, userId: number) => 
+    state.users.users.find(user => user.id === userId);
+
+
 
 export default userSlice.reducer
