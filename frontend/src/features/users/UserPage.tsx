@@ -2,39 +2,41 @@ import { useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom"
 import { selectUserById } from "./usersSlice";
 import { RootStateType } from "../../app/store";
-import { selectPostByUser } from "../posts/postsSlice";
+import { useGetPostsByUserIdQuery } from "../posts/postsSlice";
 
 const UserPage = () => {
     const { userId } = useParams();
     const user = useSelector((state: RootStateType) => selectUserById(state, Number(userId)));
 
-
-    const postsForUser = useSelector(state => selectPostByUser(state, Number(userId)));
-
-
-    // const postsForUser = useSelector((state: RootStateType) => {
-    //     const allPosts = selectAllPosts(state)
-    //     return allPosts.filter(post => post.userId === Number(userId));
-    // });
-
-    // performance : when we click on count btn in the hader we see in the reactDev tool > profile ,when we record at the user/userId page that the usersList renedr each time when we click the btn .
-    // prblem :
-    // + filter return a new array every time , 
-    // + useSelector will run every time an action is dispatch and so when we dispatch that increase count in the header then the use selector runs again , and it forces a component to re-render if a new refernce value is returned, and we are returning a new value every time with filter so that why we'are rendering the UserPage   
-    // solution :
-    // + we will fix all that by creating a memoized selector. which is selectPostByUser
+    const {
+      data: postsForUser,
+      isLoading,
+      isSuccess,
+      isError,
+      error
+    } = useGetPostsByUserIdQuery(userId);
 
 
-    const postTitles = postsForUser.map(post => (
+    let content;
+    if (isLoading) {
+      content = <p>Loading...</p>
+    } else if (isSuccess) {
+      const { ids, entities } = postsForUser;
+
+      content = ids.map(id => (
         <li>
-            <Link to={`/post/${post.id}`}>{post.title}</Link>
+            <Link to={`/post/${id}`}>{entities[id].title}</Link>
         </li>
-    ));
+      ))
+    } else if (isError) {
+      content = <p>{error as string}</p>
+    }
+
 
   return (
     <section>
         <h2>{user?.name}</h2>
-        <ol>{postTitles}</ol>
+        <ol>{content}</ol>
     </section>
   )
 }

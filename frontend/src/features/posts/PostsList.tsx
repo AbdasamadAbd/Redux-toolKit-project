@@ -1,41 +1,32 @@
 
 import { useSelector } from 'react-redux'
-import { getPostsError, getPostsStatus, selectPostIds } from './postsSlice'
+import { selectPostIds, useGetPostsQuery } from './postsSlice'
 import PostsExcerpt from './PostsExcerpt'
 
 const PostsList = () => {
-  // const posts: PostType[] = useSelector( (state: any) => state.posts)
-  // const posts = useSelector( selectAllPosts )  // we do this so if we change the staructure of our state we do not need to change it in every single compo, just in the postsSlice
-  const orderedPostsIds = useSelector( selectPostIds )
-  const postsStatus = useSelector( getPostsStatus )
-  const postsError = useSelector( getPostsError )
+  const {
+    isLoading,
+    isSuccess,
+    isError,
+    error,
+  } = useGetPostsQuery(undefined);
 
-// we do not need that becouse we fetch post at the start of the app in main.tsx
-//   useEffect(() => {
-//     if (postsStatus === "idle") {
-//       dispatch(fetchPosts())
-//     }
-//  },[postsStatus, dispatch])
+  const orderedPostsIds = useSelector( selectPostIds )
 
 
   let content;
-  if (postsStatus === "loading") {
+  if (isLoading) {
     content = <p>Loading...</p> ;
   } 
   
-  else if (postsStatus === "succeeded") {
-    // const orderedPosts = posts.slice().sort((a, b)=> b.date.localeCompare(a.date));
-    // content = orderedPosts.map(post => (
-    //   <PostsExcerpt key={post.id} post={post}/>
-    // ))
-
+  else if (isSuccess) {
     content = orderedPostsIds.map(postId => (
       <PostsExcerpt key={postId} postId={postId} />
     ))
   }
 
-  else if (postsStatus === "failed") {
-    content = <p>{postsError}</p>
+  else if (isError) {
+    content = <p>{error as string}</p>
   }
 
 

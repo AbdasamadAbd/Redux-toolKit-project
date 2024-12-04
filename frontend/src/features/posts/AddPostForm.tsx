@@ -1,15 +1,15 @@
 import { useState } from "react"
 import { useSelector } from "react-redux"
-import { addNewPost, FetchStatusType } from "./postsSlice"
+import { useAddNewPostMutation } from "./postsSlice"
 import { selectAllUsers } from "../users/usersSlice"
-import { useAppDispatch } from "../../hooks/useAppDispatch"
 import { useNavigate } from "react-router-dom"
 
 
 const AddPostForm = () => {
     const navigate = useNavigate();
 
-    const dispatch = useAppDispatch()
+    const [ addNewPost, { isLoading } ] = useAddNewPostMutation();
+
     const users = useSelector( selectAllUsers )
 
 
@@ -17,17 +17,13 @@ const AddPostForm = () => {
     const [content, setContent] = useState("")
     const [userId, setUserId] = useState<number>(NaN)
 
-    const [addReqStatus, setAddReqStatus] = useState<FetchStatusType>("idle")
 
 
-    // const canSave = Boolean(title) && Boolean(content)  && Boolean(userId)
-    const canSave = [title, content, userId].every(Boolean) && addReqStatus === "idle";
-    const onSavePostClicked = () => {
+    const canSave = [title, content, userId].every(Boolean) && !isLoading;
+    const onSavePostClicked = async () => {
         if (canSave) {
             try {
-                setAddReqStatus("pending");
-                dispatch( addNewPost({title, body: content, userId}) ).unwrap()
-                // reduxToolKit adds an unwrap func to the returned promise and then that return retuens a new promise that either has the action payload or it throws an arror, if it is the rejected action, so that let's us use this tryCatch logic here 
+                await addNewPost({title, body: content, userId}).unwrap()
 
                 setTitle("");
                 setContent("");
@@ -37,8 +33,6 @@ const AddPostForm = () => {
 
             } catch (error) {
                 console.error("Faild to save the post ", error);
-            } finally {
-                setAddReqStatus("idle")
             }
         }
     }

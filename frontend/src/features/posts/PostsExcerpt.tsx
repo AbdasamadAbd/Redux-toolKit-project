@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 
 type Props = {
-  postId: number
+  postId: string
   // post: PostType
 }
 

@@ -1,5 +1,4 @@
-import { useDispatch } from "react-redux"
-import { PostType, reactionAdded } from "./postsSlice";
+import { PostType, useAddReactionMutation } from "./postsSlice";
 
 import { FaHeart } from "react-icons/fa6";
 import { FaCoffee, FaGrinHearts, FaRocket } from "react-icons/fa";
@@ -16,7 +15,8 @@ const reactionEmoji = {
 
 
 const ReactionBtns = ({post}: {post: PostType}) => {
-  const dispatch = useDispatch();
+
+  const [ addReaction ] = useAddReactionMutation();
 
   const reactionBtns = Object.entries(reactionEmoji).map(([name, emoji]) => {
     return (
@@ -24,8 +24,13 @@ const ReactionBtns = ({post}: {post: PostType}) => {
         key={name}
         type="button"
         className=""
-        onClick={() => dispatch(reactionAdded({postId: post.id, reaction: name}))}
-      >
+        onClick={() => {
+          
+          const newValue = post.reactions[name] + 1 ; // increament for this specific reaction
+          addReaction({postId: post.id, reactions: {...post.reactions, [name]: newValue}})
+          console.log({...post.reactions, [name]: newValue});
+        }}
+        >
         {emoji} {post.reactions[name]}
       </button>
     )

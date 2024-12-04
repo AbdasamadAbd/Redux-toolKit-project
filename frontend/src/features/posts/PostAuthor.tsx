@@ -1,5 +1,6 @@
 import { useSelector } from "react-redux"
 import { getUsersError, getUsersStatus, selectAllUsers } from "../users/usersSlice"
+import { Link } from "react-router-dom"
 interface Props {
     userId: number
 }
@@ -8,13 +9,6 @@ const PostAuthor = ({userId}: Props) => {
     const users = useSelector(selectAllUsers)    
     const usersStatus = useSelector(getUsersStatus)
     const usersError = useSelector(getUsersError)
-    
-    // we fetch users in the load time in main.ts to get theme dirctly when the app starts
-    // useEffect(() => {
-    //     if (usersStatus === "idle") {
-    //       dispatch(fetchUsers())
-    //     }
-    // },[fetchUsers, dispatch])
 
     let content;
     if (usersStatus === "loading") {
@@ -28,7 +22,9 @@ const PostAuthor = ({userId}: Props) => {
 
       content = <span className="bg-white px-3">
                   By 
-                  { author? author.name : "Unknown author" }
+                  { author? <Link to={`/user/${userId}`}>{author.name}</Link> 
+                    : "Unknown author" 
+                  }
               </span>
     }
 

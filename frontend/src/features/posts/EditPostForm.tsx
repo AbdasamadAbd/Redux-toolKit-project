@@ -1,24 +1,35 @@
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom"
 import { RootStateType } from "../../app/store";
-import { deletePost, FetchStatusType, selectPostById, updatePost } from "./postsSlice";
+import { selectPostById, useDeletePostMutation, useUpdatePostMutation } from "./postsSlice";
 import { selectAllUsers } from "../users/usersSlice";
-import { useState } from "react";
-import { useAppDispatch } from "../../hooks/useAppDispatch";
+import { useEffect, useState } from "react";
 
 const EditPostForm = () => {
     const {postId} = useParams();
     const navigate = useNavigate();
 
-    const post = useSelector((state: RootStateType) => selectPostById(state, Number(postId)));
+    const [ updatePost, { isLoading } ] = useUpdatePostMutation();
+    const [ deletePost ] = useDeletePostMutation();
+
+
+    const post = useSelector((state: RootStateType) => selectPostById(state, postId as string));
+    console.log("edited post : ", post);
+    
     const users = useSelector(selectAllUsers);
 
-    const [title, setTitle] = useState(post?.title);
-    const [content, setContent] = useState(post?.body);
-    const [userId, setUserId] = useState(post?.userId);
-    const [requstStatus, setRequstStatus] = useState<FetchStatusType>("idle");
+    const [title, setTitle] = useState<string>('');
+    const [content, setContent] = useState<string>('');
+    const [userId, setUserId] = useState<number>(0);
 
-    const dispatch = useAppDispatch();
+    // i do this becouse when you reload the page it does not rest the data to the orginal
+    useEffect(()=> {
+        if (post && post.userId != 0) {
+            setTitle(post.title);
+            setContent(post.body);
+            setUserId(post?.userId);
+        }
+    }, [post])
     
     if (!post) {
         return (
@@ -28,17 +39,11 @@ const EditPostForm = () => {
         )
     };
 
-    // const onTitleChanged = (e: any) => setTitle(e.target.value);
-    // const onContentChanged = (e: any) => setContent(e.target.value);
-    // const onAuthorChanged = (e: any) => setUserId(e.target.value);
-
-    const canSave = [title, content, userId].every(Boolean) && requstStatus === "idle";
-    const onSavePostClicked = () => {
+    const canSave = [title, content, userId].every(Boolean) && !isLoading;
+    const onSavePostClicked = async () => {
         if (canSave) {
             try {
-                setRequstStatus("pending");
-                dispatch( updatePost({ id: post.id, title, body: content, userId, reactions: post.reactions}) ).unwrap()
-                // reduxToolKit adds an unwrap func to the returned promise and then that return a new promise that either has the action payload or it throws an arror, if it is the rejected action, so that let's us use this tryCatch logic here 
+                await updatePost({ id: post.id, title, body: content, userId, reactions: post.reactions}).unwrap()
 
                 setTitle("");
                 setContent("");
@@ -48,18 +53,15 @@ const EditPostForm = () => {
 
             } catch (error) {
                 console.error("Faild to save the post ", error);
-            } finally {
-                setRequstStatus("idle")
             }
         }
     }
 
 
-    const onDeletePostClicked = () => {
+    const onDeletePostClicked = async () => {
         if (canSave) {
             try {
-                setRequstStatus("pending");
-                dispatch( deletePost({ id: post.id}) ).unwrap()
+                await deletePost({ id: post.id}).unwrap()
 
                 setTitle("");
                 setContent("");
@@ -69,8 +71,6 @@ const EditPostForm = () => {
 
             } catch (error) {
                 console.error("Faild to delete the post ", error);
-            } finally {
-                setRequstStatus("idle")
             }
         }
     }
